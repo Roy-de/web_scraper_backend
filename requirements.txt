@@ -4,3 +4,4 @@ fastapi~=0.108.0
 pydantic~=2.5.3
 Scrapy~=2.11.2
 starlette~=0.32.0.post1
+uvicorn~=0.30.3
