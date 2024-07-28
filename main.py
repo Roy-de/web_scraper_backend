@@ -148,8 +148,8 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
         else:
             result = {"error": "No result found"}
 
-        crud.create_product(db,
-                            schemas.ProductCreate(sku=CrawlerRequest.sku, url=url, output=json.dumps(result)))
+        # crud.create_product(db,
+        #                     schemas.ProductCreate(sku=CrawlerRequest.sku, url=url, output=json.dumps(result)))
 
         return {"message": result}
 
