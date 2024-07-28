@@ -108,7 +108,7 @@ def run_crawler_process(url: str, spider: BaseSpider):
 
 
 class CrawlerRequest(BaseModel):
-    product_SKU: str
+    sku: str
     url: str
 
 
@@ -149,7 +149,7 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
             result = {"error": "No result found"}
 
         crud.create_product(db,
-                            schemas.ProductCreate(sku=CrawlerRequest.product_SKU, url=url, output=json.dumps(result)))
+                            schemas.ProductCreate(sku=CrawlerRequest.sku, url=url, output=json.dumps(result)))
 
         return {"message": result}
 
