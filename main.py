@@ -2,6 +2,7 @@ import json
 import multiprocessing
 import os
 from io import StringIO
+from typing import Optional
 
 import pandas as pd
 from fastapi import FastAPI, Depends, HTTPException
@@ -108,7 +109,7 @@ def run_crawler_process(url: str, spider: BaseSpider):
 
 
 class CrawlerRequest(BaseModel):
-    sku: str
+    sku: Optional[str]
     url: str
 
 

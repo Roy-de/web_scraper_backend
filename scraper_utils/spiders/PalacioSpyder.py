@@ -19,24 +19,22 @@ class PalacioSpyder(BaseSpider):
         self.result_file = 'result_palacio.json'
 
     def parse(self, response, **kwargs):
-        result = {'link_works': "Link does not work"}
 
         # Check if the response status is 410
         if response.status == 410:
-            result['error'] = "Link does not work (410 Gone)"
+            result = "Link does not work"
             self.save_result(result)
             return
 
         # Check if the product main info div exists to determine if the link works
         product_info = response.css('div.l-pdp-b-content.b-product_main_info.m-pdpv2').get()
         if product_info:
-            result['link_works'] = "Link works"
 
             # Check if the 'Add to Cart' button is disabled to determine stock status
             is_disabled = response.css("button.b-add_to_cart_v2-btn.m-disabled").get()
-            result['stock'] = "Not Available" if is_disabled else "Available"
+            result = "Not Available" if is_disabled else "Available"
         else:
-            result['error'] = "Product main info not found"
+            result = "Product main info not found"
 
         # Save the result to a file
         self.save_result(result)

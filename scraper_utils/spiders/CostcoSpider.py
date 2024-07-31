@@ -10,7 +10,6 @@ class CostcoSpider(BaseSpider):
         self.result_file = 'result_costco.json'
 
     def parse(self, response, **kwargs):
-        result = {}
 
         # Capture the entire page content
         item = {'url': response.url,
@@ -26,7 +25,7 @@ class CostcoSpider(BaseSpider):
             if (response.css('div.product-price sip-skeleton').get() and
                     response.css('div.product-information sip-skeleton').get() and
                     response.css('div.add-to-cart sip-skeleton').get()):
-                result['error'] = 'Link broken or content not available (loading placeholders found)'
+                result = 'Link broken'
                 item[
                     'error_message'] = ('The link seems to be broken or content is not available. Only loading '
                                         'placeholders found.')
@@ -48,24 +47,20 @@ class CostcoSpider(BaseSpider):
         item['inventory_status'] = ' '.join(
             [status.strip() for status in inventory_status_list]) if inventory_status_list else 'N/A'
 
-        result['link_works'] = "Link works"
         out_of_stock_button = response.css('button.outOfStock::text').get()
+        zip_code_button = response.css('button.bd-view-pricing::text').get()
         if out_of_stock_button:
-
-            result["Stock"] = "Not Available"
+            result = "Not Available"
             print("The item is out of stock")
         else:
-            result["Stock"] = "Available"
+            if zip_code_button and 'Seleccionar Código Postal' in zip_code_button:
+                result = "Zip code required and in stock"
+                print("Zip code required.")
+            else:
+                result = "No zip code required but in stock"
+                print("No zip code requirement button found.")
             print("The item is in stock")
 
-        zip_code_button = response.css('button.bd-view-pricing::text').get()
-        if zip_code_button and 'Seleccionar Código Postal' in zip_code_button:
-            result["Zip code"] = "Zip code required"
-            print("Zip code required.")
-        else:
-            result["Zip code"] = "No zip code required"
-            print("No zip code requirement button found.")
-        print(result)
         self.logger.info(f"Scraped data: {result}")
         # Save result to file
         self.save_result(result)
