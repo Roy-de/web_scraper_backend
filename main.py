@@ -1,6 +1,8 @@
+import asyncio
 import json
 import multiprocessing
 import os
+from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 from typing import Optional
 
@@ -113,6 +115,14 @@ class CrawlerRequest(BaseModel):
     url: str
 
 
+def read_result_file(result_file):
+    if os.path.exists(result_file):
+        with open(result_file, 'r') as f:
+            return json.load(f)
+    else:
+        return {"error": "No result found"}
+
+
 @app.post("/run_crawler/")
 async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
     url = request.url
@@ -124,33 +134,27 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
         spider = PalacioSpyder
         result_file = 'result_palacio.json'
     else:
-        raise HTTPException(status_code=400, detail="Unsupported URL")
+        raise HTTPException(status_code=200, detail="Unsupported URL")
 
     if url in processes:
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
 
+    loop = asyncio.get_event_loop()
+    executor = ThreadPoolExecutor(max_workers=20)
+
     try:
         # Create and start a new process for the crawler
-        process = multiprocessing.Process(target=run_crawler_process, args=(url, spider))
-        process.start()
+        process = await loop.run_in_executor(executor, run_crawler_process, url, spider)
         processes[url] = process
 
         # Optionally, you can set a timeout or periodically check the status of the process
         while process.is_alive():
-            time.sleep(10)  # Adjust as needed
+            await asyncio.sleep(10)
 
         # Wait for the process to complete
-        process.join()
+        await loop.run_in_executor(executor, process.join)
 
-        # Read the result from the file
-        if os.path.exists(result_file):
-            with open(result_file, 'r') as f:
-                result = json.load(f)
-        else:
-            result = {"error": "No result found"}
-
-        # crud.create_product(db,
-        #                     schemas.ProductCreate(sku=CrawlerRequest.sku, url=url, output=json.dumps(result)))
+        result = await loop.run_in_executor(executor, read_result_file, result_file)
 
         return {"message": result}
 
