@@ -136,7 +136,7 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
         spider = PalacioSpyder
         result_file = 'result_palacio.json'
     else:
-        raise HTTPException(status_code=200, detail="Unsupported URL")
+        return {"message": "URL not supported"}
 
     if url in processes:
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
