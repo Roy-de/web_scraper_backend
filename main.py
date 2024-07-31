@@ -3,7 +3,7 @@ import concurrent
 import json
 import multiprocessing
 import os
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from io import StringIO
 from typing import Optional
 
@@ -143,13 +143,9 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
 
     try:
         # Create and start a new process for the crawler
-        with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
-            result_future = pool.apply_async(run_crawler_process, (url, spider, result_file))
+        with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as pool:
+            result_future = pool.submit(run_crawler_process, url, spider, result_file)
             processes[url] = result_future
-
-            # Non-blocking wait for the result
-            while not result_future.ready():
-                await asyncio.sleep(0.1)
 
             result = read_result_file(result_file)
 
