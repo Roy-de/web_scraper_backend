@@ -1,4 +1,5 @@
 import asyncio
+import concurrent
 import json
 import multiprocessing
 import os
@@ -103,11 +104,12 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Product not found")
 
 
-def run_crawler_process(url: str, spider: BaseSpider):
+def run_crawler_process(url: str, spider: BaseSpider, result_file: str):
     settings = get_project_settings()
     process = CrawlerProcess(settings)
     process.crawl(spider, url=url)
     process.start()
+    read_result_file(result_file)
 
 
 class CrawlerRequest(BaseModel):
@@ -120,7 +122,7 @@ def read_result_file(result_file):
         with open(result_file, 'r') as f:
             return json.load(f)
     else:
-        return {"error": "No result found"}
+        return {"No result found"}
 
 
 @app.post("/run_crawler/")
@@ -139,24 +141,19 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
     if url in processes:
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
 
-    loop = asyncio.get_event_loop()
-    executor = ThreadPoolExecutor(max_workers=20)
-
     try:
         # Create and start a new process for the crawler
-        process = await loop.run_in_executor(executor, run_crawler_process, url, spider)
-        processes[url] = process
+        with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+            result_future = pool.apply_async(run_crawler_process, (url, spider, result_file))
+            processes[url] = result_future
 
-        # Optionally, you can set a timeout or periodically check the status of the process
-        while process.is_alive():
-            await asyncio.sleep(10)
+            # Non-blocking wait for the result
+            while not result_future.ready():
+                await asyncio.sleep(0.1)
 
-        # Wait for the process to complete
-        await loop.run_in_executor(executor, process.join)
+            result = read_result_file(result_file)
 
-        result = await loop.run_in_executor(executor, read_result_file, result_file)
-
-        return {"message": result}
+            return {"message": result}
 
     except Exception as e:
         traceback.print_exc()
