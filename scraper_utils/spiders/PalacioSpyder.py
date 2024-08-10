@@ -22,7 +22,7 @@ class PalacioSpyder(BaseSpider):
 
         # Check if the response status is 410
         if response.status == 410:
-            result = "Link does not work"
+            result = "Link broken"
             self.save_result(result)
             return
 
@@ -32,9 +32,9 @@ class PalacioSpyder(BaseSpider):
 
             # Check if the 'Add to Cart' button is disabled to determine stock status
             is_disabled = response.css("button.b-add_to_cart_v2-btn.m-disabled").get()
-            result = "Not Available" if is_disabled else "Available"
+            result = "Out of stock" if is_disabled else "In stock"
         else:
-            result = "Product main info not found"
+            result = "Link broken"
 
         # Save the result to a file
         self.save_result(result)
