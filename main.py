@@ -147,6 +147,8 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
             result_future = pool.submit(run_crawler_process, url, spider, result_file)
             processes[url] = result_future
 
+            result_future.result()
+
             result = read_result_file(result_file)
 
             return {"message": result}
