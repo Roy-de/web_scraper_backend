@@ -1,28 +1,19 @@
-import asyncio
-import concurrent
 import json
 import multiprocessing
 import os
+import traceback
 from concurrent.futures import ProcessPoolExecutor
-from io import StringIO
 from typing import Optional
 
-import pandas as pd
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
-from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
-import time
-import traceback
 
-from starlette.responses import StreamingResponse
-
-import crud
 import models
-import schemas
-from scraper_utils import BaseSpider
+from scraper_utils import BaseSpider, BaseSelenium
+from scraper_utils.spiders.LiverpoolSelenium import LiverPoolSeleniumSpider
 from scraper_utils.spiders.CostcoSpider import CostcoSpider
 from scraper_utils.spiders.PalacioSpyder import PalacioSpyder
 
@@ -40,76 +31,22 @@ app.add_middleware(
 processes = {}
 
 
-# Dependency to get the database session
-def get_db():
-    db = models.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@app.post("/products/", response_model=schemas.ProductResponse)
-def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
-    db_product = crud.create_product(db, product)
-    if db_product:
-        return db_product
-    raise HTTPException(status_code=400, detail="Failed to create product")
-
-
-@app.get("/products/", response_model=list[schemas.ProductResponse])
-def read_products(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    products = crud.get_products(db, skip=skip, limit=limit)
-    return [
-        schemas.ProductResponse(
-            id=product.id,
-            sku=product.sku,
-            url=product.url,
-            output=product.output,
-            statusCode=200,
-            message="Product retrieved successfully"
-        )
-        for product in products
-    ]
-
-
-@app.get("/products/{product_id}", response_model=schemas.ProductResponse)
-def read_product(product_id: int, db: Session = Depends(get_db)):
-    db_product = crud.get_product(db, product_id)
-    if db_product:
-        return schemas.ProductResponse(
-            id=db_product.id,
-            sku=db_product.sku,
-            url=db_product.url,
-            output=db_product.output,
-            statusCode=200,
-            message="Product retrieved successfully"
-        )
-    raise HTTPException(status_code=404, detail="Product not found")
-
-
-@app.put("/products/{product_id}", response_model=schemas.ProductResponse)
-def update_product(product_id: int, product: schemas.ProductUpdate, db: Session = Depends(get_db)):
-    db_product = crud.update_product(db, product_id, product)
-    if db_product:
-        return db_product
-    raise HTTPException(status_code=404, detail="Product not found")
-
-
-@app.delete("/products/{product_id}", response_model=schemas.ProductResponse)
-def delete_product(product_id: int, db: Session = Depends(get_db)):
-    db_product = crud.delete_product(db, product_id)
-    if db_product:
-        return db_product
-    raise HTTPException(status_code=404, detail="Product not found")
-
-
-def run_crawler_process(url: str, spider: BaseSpider, result_file: str):
+def run_scrapy_crawler_process(url: str, spider: BaseSpider, result_file: str):
     settings = get_project_settings()
     process = CrawlerProcess(settings)
     process.crawl(spider, url=url)
     process.start()
-    read_result_file(result_file)
+    return read_result_file(result_file)
+
+
+def run_selenium_crawler_process(url: str, spider_class: BaseSelenium, result_file: str):
+    try:
+        spider = spider_class(url=url, result_file=result_file)
+        spider.run()
+        return read_result_file(result_file)
+    except Exception as e:
+        traceback.print_exc()
+        return {"error": str(e)}
 
 
 class CrawlerRequest(BaseModel):
@@ -126,15 +63,22 @@ def read_result_file(result_file):
 
 
 @app.post("/run_crawler/")
-async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
+async def run_crawler(request: CrawlerRequest):
     url = request.url
 
+    # Determine the spider type and result file based on URL
     if 'costco' in url:
         spider = CostcoSpider
         result_file = 'result_costco.json'
+        spider_type = 'scrapy'
     elif 'elpalaciodehierro' in url:
         spider = PalacioSpyder
         result_file = 'result_palacio.json'
+        spider_type = 'scrapy'
+    elif 'liverpool' in url:
+        spider = LiverPoolSeleniumSpider
+        result_file = "result_liverpool.json"
+        spider_type = 'selenium'
     else:
         return {"message": "URL not supported"}
 
@@ -142,16 +86,17 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
 
     try:
-        # Create and start a new process for the crawler
-        with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as pool:
-            result_future = pool.submit(run_crawler_process, url, spider, result_file)
-            processes[url] = result_future
+        if spider_type == 'scrapy':
+            # For Scrapy spiders, use ProcessPoolExecutor
+            with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as pool:
+                result_future = pool.submit(run_scrapy_crawler_process, url, spider, result_file)
+                processes[url] = result_future
+                result = result_future.result()
+        else:
+            # For Selenium spiders, run directly in the main process (single-threaded)
+            result = run_selenium_crawler_process(spider_class=spider, url=url, result_file=result_file)
 
-            result_future.result()
-
-            result = read_result_file(result_file)
-
-            return {"message": result}
+        return {"message": result}
 
     except Exception as e:
         traceback.print_exc()
@@ -160,45 +105,3 @@ async def run_crawler(request: CrawlerRequest, db: Session = Depends(get_db)):
         # Clean up process entry if the process is completed or failed
         if url in processes:
             del processes[url]
-
-
-@app.post("/terminate_crawler/")
-async def terminate_crawler(url: str):
-    global processes
-
-    if url not in processes:
-        raise HTTPException(status_code=404, detail="No running process for this URL")
-
-    process = processes[url]
-    process.terminate()
-
-    # Remove the process reference
-    del processes[url]
-
-    return {'message': 'Crawler terminated successfully'}
-
-
-@app.get("/export_csv/")
-async def export_csv(db: Session = Depends(get_db)):
-    # Query all products
-    products = crud.get_products(db, skip=0, limit=1000)  # Adjust limit as needed
-
-    # Convert the list of products to a pandas DataFrame
-    df = pd.DataFrame([{
-        "id": product.id,
-        "sku": product.sku,
-        "url": product.url,
-        "output": product.output
-    } for product in products])
-
-    # Convert the DataFrame to CSV
-    csv_buffer = StringIO()
-    df.to_csv(csv_buffer, index=False)
-
-    # Return the CSV file as a StreamingResponse
-    csv_buffer.seek(0)
-    return StreamingResponse(
-        content=csv_buffer,
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=products.csv"}
-    )
