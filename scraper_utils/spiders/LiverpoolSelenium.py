@@ -69,9 +69,3 @@ class LiverPoolSeleniumSpider(BaseSelenium):
     def save_result(self, result):
         with open(self.result_file, 'w') as f:
             json.dump(result, f, indent=4)
-
-
-# if __name__ == '__main__':
-#     # LiverPoolSeleniumSpider(
-#     #     url="https://www.liverpool.com.mx/tienda/pdp/tostador-2-rebanadas-smeg/1083668171?gfeed=true&gclid=CjwKCAjwhYOFBhBkEiwASF3KGXML8qcL44E5LEsxEoGrbn4xYadW3xUaD2TxloO_6hht8_xzXNJxBxoCwRoQAvD_BwE&gclsrc=aw.ds",
-#     #     result_file="result_liverpool.json").run()

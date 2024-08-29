@@ -6,3 +6,4 @@ Scrapy~=2.11.2
 starlette~=0.32.0.post1
 uvicorn~=0.30.3
 selenium~=4.23.1
+webdriver-manager

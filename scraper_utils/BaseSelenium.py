@@ -5,6 +5,8 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 
 
 class BaseSelenium:
@@ -22,7 +24,9 @@ class BaseSelenium:
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Prevent detection
             chrome_options.add_argument("--enable-javascript")  # Ensure JS is enabled
 
-            self.driver = webdriver.Chrome(options=chrome_options)
+            service = Service(ChromeDriverManager().install())
+
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
         elif browser == 'firefox':
             firefox_options = FirefoxOptions()
             firefox_options.add_argument("--disable-dev-shm-usage")

@@ -1,6 +1,32 @@
 # Use the official Python image
 FROM python:3.11
 
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    unzip \
+    libxi6 \
+    libgconf-2-4 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Google Chrome
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt-get update \
+    && apt-get install -y ./google-chrome-stable_current_amd64.deb \
+    && rm google-chrome-stable_current_amd64.deb
+
+# Install ChromeDriver
+RUN CHROME_DRIVER_VERSION=$(wget -q -O - https://chromedriver.storage.googleapis.com/LATEST_RELEASE) \
+    && wget https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
+    && unzip chromedriver_linux64.zip \
+    && rm chromedriver_linux64.zip \
+    && mv chromedriver /usr/local/bin/chromedriver \
+    && chmod +x /usr/local/bin/chromedriver
+
+# Set the display port to avoid crashes
+ENV DISPLAY=:99
+
 # Set the working directory
 WORKDIR /app
 
