@@ -11,13 +11,11 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from starlette.middleware.cors import CORSMiddleware
 
-import models
 from scraper_utils import BaseSpider, BaseSelenium
 from scraper_utils.spiders.LiverpoolSelenium import LiverPoolSeleniumSpider
 from scraper_utils.spiders.CostcoSpider import CostcoSpider
 from scraper_utils.spiders.PalacioSpyder import PalacioSpyder
 
-models.Base.metadata.create_all(bind=models.engine)
 app = FastAPI()
 
 app.add_middleware(
