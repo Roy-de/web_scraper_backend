@@ -12,6 +12,7 @@ from scrapy.utils.project import get_project_settings
 from starlette.middleware.cors import CORSMiddleware
 
 from scraper_utils import BaseSpider, BaseSelenium
+from scraper_utils.spiders.MercadoLibreSelenium import MercadoLibreSeleniumSpider
 from scraper_utils.spiders.LiverpoolSelenium import LiverPoolSeleniumSpider
 from scraper_utils.spiders.CostcoSpider import CostcoSpider
 from scraper_utils.spiders.PalacioSpyder import PalacioSpyder
@@ -76,6 +77,10 @@ async def run_crawler(request: CrawlerRequest):
     elif 'liverpool' in url:
         spider = LiverPoolSeleniumSpider
         result_file = "result_liverpool.json"
+        spider_type = 'selenium'
+    elif 'mercadolibre' in url:
+        spider = MercadoLibreSeleniumSpider
+        result_file = "result_mercadolibre.json"
         spider_type = 'selenium'
     else:
         return {"message": "URL not supported"}
