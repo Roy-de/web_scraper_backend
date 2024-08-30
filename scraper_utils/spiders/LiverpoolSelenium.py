@@ -25,14 +25,14 @@ class LiverPoolSeleniumSpider(BaseSelenium):
 
             # Check if the page is broken
             if self.is_link_broken():
-                self.save_result("Link broken.")
+                self.save_result("Link broken")
             else:
                 # Check if the product is in stock
                 in_stock = self.check_if_in_stock()
                 if in_stock:
-                    self.save_result("In stock.")
+                    self.save_result("In stock")
                 else:
-                    self.save_result("Out of stock.")
+                    self.save_result("Out of stock")
         except TimeoutException:
             print("Page did not load fully, the link might be broken or there was a loading issue.")
 

@@ -51,15 +51,11 @@ class CostcoSpider(BaseSpider):
         zip_code_button = response.css('button.bd-view-pricing::text').get()
         if out_of_stock_button:
             result = "Out of stock"
-            print("The item is out of stock")
         else:
             if zip_code_button and 'Seleccionar Código Postal' in zip_code_button:
                 result = "In stock - Zip code required"
-                print("Zip code required.")
             else:
                 result = "In stock"
-                print("No zip code requirement button found.")
-            print("The item is in stock")
 
         self.logger.info(f"Scraped data: {result}")
         # Save result to file

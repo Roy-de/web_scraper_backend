@@ -28,13 +28,13 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
 
             # Check if the page is broken
             if self.is_link_broken():
-                self.save_result("Link broken.")
+                self.save_result("Link broken")
             else:
                 # Check if the product is in stock or available through external vendors
                 availability_status = self.check_if_in_stock()
                 self.save_result(availability_status)
         except TimeoutException:
-            print("Page did not load fully, the link might be broken or there was a loading issue.")
+            print("Page did not load fully, the link might be broken or there was a loading issue")
 
     def is_link_broken(self):
         try:
@@ -66,7 +66,7 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
                 EC.presence_of_element_located((By.ID, ':R9b9k5l9im:'))
             )
             if buy_now_button.is_displayed():
-                return "In stock."
+                return "In stock"
 
         except (NoSuchElementException, TimeoutException):
             # If "Comprar ahora" button is not found, check for external vendors
@@ -75,11 +75,11 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
                     EC.presence_of_element_located((By.ID, ':R16qakck4um:'))
                 )
                 if external_vendor_element.is_displayed():
-                    return "Available through external vendors."
+                    return "Available through external vendors"
             except (NoSuchElementException, TimeoutException):
-                return "Out of stock."
+                return "Out of stock"
 
-        return "Out of stock."
+        return "Out of stock"
 
 
 if __name__ == '__main__':
