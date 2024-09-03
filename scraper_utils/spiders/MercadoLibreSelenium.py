@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from scraper_utils.BaseSelenium import BaseSelenium
+from scraper_utils.result import Result
 
 
 class MercadoLibreSeleniumSpider(BaseSelenium):
@@ -13,10 +14,11 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
         super().__init__(browser)
         self.url = url
         self.result_file = result_file
+        self.result = Result()
 
     def save_result(self, result):
         with open(self.result_file, 'w') as f:
-            json.dump(result, f, indent=4)
+            json.dump(self.result.to_dict(), f, indent=4)
 
     def run(self):
         # Navigate to the given URL
@@ -28,11 +30,16 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
 
             # Check if the page is broken
             if self.is_link_broken():
-                self.save_result("Link broken")
+                self.result.status = "Link broken"
             else:
                 # Check if the product is in stock or available through external vendors
                 availability_status = self.check_if_in_stock()
-                self.save_result(availability_status)
+                self.result.status = availability_status
+            price = self.extract_price()
+            self.result.price = f"${price}"
+            categories = self.extract_breadcrumbs()
+            self.result.category = categories[2]
+            self.save_result(self.result)
         except TimeoutException:
             print("Page did not load fully, the link might be broken or there was a loading issue")
 
@@ -80,6 +87,40 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
                 return "Out of stock"
 
         return "Out of stock"
+
+    def extract_price(self):
+        try:
+            price = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR,"span.andes-money-amount__fraction"))
+            )
+            print(price.text)
+            return price.text
+        except (NoSuchElementException, TimeoutException):
+            return None
+
+    def extract_breadcrumbs(self):
+        try:
+            # Wait until the breadcrumb container is present
+            breadcrumb_container = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "ol.andes-breadcrumb"))
+            )
+
+            # Extract breadcrumb items
+            breadcrumb_elements = breadcrumb_container.find_elements(By.CSS_SELECTOR, "li.andes-breadcrumb__item")
+            breadcrumbs = []
+
+            for element in breadcrumb_elements:
+                # Extract text from each breadcrumb link
+                link_element = element.find_element(By.CSS_SELECTOR, "a.andes-breadcrumb__link")
+                breadcrumbs.append(link_element.text.strip())
+
+            # Print the extracted breadcrumb elements
+            print("Breadcrumbs:", breadcrumbs)
+
+            return list(reversed(breadcrumbs))
+        except (NoSuchElementException, TimeoutException) as e:
+            print("An error occurred:", e)
+            return []
 
 
 if __name__ == '__main__':

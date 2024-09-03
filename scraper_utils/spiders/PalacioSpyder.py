@@ -1,6 +1,7 @@
 import json
 import logging
 from scraper_utils.BaseSpider import BaseSpider
+from scraper_utils.result import Result
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -16,6 +17,7 @@ class PalacioSpyder(BaseSpider):
 
     def __init__(self, url='https://www.elpalaciodehierro.com/', *args, **kwargs):
         super(PalacioSpyder, self).__init__(url, *args, **kwargs)
+        self.result = Result()
         self.result_file = 'result_palacio.json'
 
     def parse(self, response, **kwargs):
@@ -23,9 +25,13 @@ class PalacioSpyder(BaseSpider):
         # Check if the response status is 410
         if response.status == 410:
             result = "Link broken"
-            self.save_result(result)
+            self.result.status = result
             return
+        price = response.css("span.b-product_price-value::text").get()
+        self.result.price = price.strip()
 
+        category = response.css("h2.b-product_main_info-brand a::text").get()
+        self.result.category = category.strip()
         # Check if the product main info div exists to determine if the link works
         product_info = response.css('div.l-pdp-b-content.b-product_main_info.m-pdpv2').get()
         if product_info:
@@ -37,13 +43,10 @@ class PalacioSpyder(BaseSpider):
             result = "Link broken"
 
         # Save the result to a file
-        self.save_result(result)
+        self.result.status = result
 
-    def save_result(self, result):
-        try:
-            logger.debug(f"Saving result to {self.result_file}: {result}")
-            with open(self.result_file, 'w') as f:
-                json.dump(result, f, indent=4)
-            logger.debug(f"Successfully saved result to {self.result_file}")
-        except Exception as e:
-            logger.error(f"Failed to save result to {self.result_file}: {e}")
+        self.save_result()
+
+    def save_result(self):
+        with open(self.result_file, 'w') as f:
+            json.dump(self.result.to_dict(), f, indent=4)

@@ -1,5 +1,9 @@
-from scraper_utils.BaseSpider import BaseSpider
 import json
+import re
+
+from scraper_utils.BaseSpider import BaseSpider
+
+from scraper_utils.result import Result
 
 
 class CostcoSpider(BaseSpider):
@@ -7,6 +11,7 @@ class CostcoSpider(BaseSpider):
 
     def __init__(self, url='https://www.costco.com.mx/', *args, **kwargs):
         super(CostcoSpider, self).__init__(url, *args, **kwargs)
+        self.result = Result()
         self.result_file = 'result_costco.json'
 
     def parse(self, response, **kwargs):
@@ -29,18 +34,18 @@ class CostcoSpider(BaseSpider):
                 item[
                     'error_message'] = ('The link seems to be broken or content is not available. Only loading '
                                         'placeholders found.')
-                self.save_result(result)
+                self.result.status = result
                 return
 
         # Extract details
-        original_price = response.css('.price-original .price-value span.notranslate::text').get()
-        discount_amount = response.css('.discount-value span.notranslate::text').get()
-        final_price = response.css('.price-after-discount .you-pay-value span::text').get()
+        price = response.css('span.notranslate.ng-star-inserted::text').get()
+        item['price'] = price.strip() if price else 'N/A'
+        self.result.price = item['price']
 
-        # Clean up and assign details if data is available
-        item['original_price'] = original_price.strip() if original_price else 'N/A'
-        item['discount_amount'] = discount_amount.strip() if discount_amount else 'N/A'
-        item['final_price'] = final_price.strip() if final_price else 'N/A'
+        match = re.search(r'costco.com.mx/[^/]+/([^/]+)/', response.url)
+        category = match.group(1) if match else 'N/A'
+        print(category)
+        self.result.category = category
 
         # Extract inventory status
         inventory_status_list = response.css('.pdp-message::text').getall()
@@ -57,10 +62,13 @@ class CostcoSpider(BaseSpider):
             else:
                 result = "In stock"
 
-        self.logger.info(f"Scraped data: {result}")
+        self.logger.info(f"Assigned price: {self.result.price}")
         # Save result to file
-        self.save_result(result)
+        self.result.status = result
+        self.logger.info(f"Assigned status: {self.result.status}")
 
-    def save_result(self, result):
+        self.save_result()
+
+    def save_result(self):
         with open(self.result_file, 'w') as f:
-            json.dump(result, f, indent=4)
+            json.dump(self.result.to_dict(), f, indent=4)
