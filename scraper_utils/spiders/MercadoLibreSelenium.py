@@ -35,10 +35,10 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
                 # Check if the product is in stock or available through external vendors
                 availability_status = self.check_if_in_stock()
                 self.result.status = availability_status
-            price = self.extract_price()
-            self.result.price = f"${price}"
-            categories = self.extract_breadcrumbs()
-            self.result.category = categories[2]
+                price = self.extract_price()
+                self.result.price = f"${price}"
+                categories = self.extract_breadcrumbs()
+                self.result.category = categories[2]
             self.save_result(self.result)
         except TimeoutException:
             print("Page did not load fully, the link might be broken or there was a loading issue")

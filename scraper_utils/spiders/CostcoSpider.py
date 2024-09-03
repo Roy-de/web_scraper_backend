@@ -37,15 +37,20 @@ class CostcoSpider(BaseSpider):
                 self.result.status = result
                 return
 
+        breadcrumbs = response.css('ol.breadcrumb li a::text').getall()
+
+        if breadcrumbs:
+            self.result.category = breadcrumbs[1]
+
         # Extract details
         price = response.css('span.notranslate.ng-star-inserted::text').get()
         item['price'] = price.strip() if price else 'N/A'
         self.result.price = item['price']
 
-        match = re.search(r'costco.com.mx/[^/]+/([^/]+)/', response.url)
-        category = match.group(1) if match else 'N/A'
-        print(category)
-        self.result.category = category
+        # match = re.search(r'costco.com.mx/[^/]+/([^/]+)/', response.url)
+        # category = match.group(1) if match else 'N/A'
+        # print(match.group(0))
+        # self.result.category = category
 
         # Extract inventory status
         inventory_status_list = response.css('.pdp-message::text').getall()

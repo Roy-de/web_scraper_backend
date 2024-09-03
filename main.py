@@ -53,6 +53,12 @@ class CrawlerRequest(BaseModel):
     url: str
 
 
+def clean_json_file(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, "w") as f:
+            json.dump({}, f)
+
+
 def read_result_file(result_file):
     if os.path.exists(result_file):
         with open(result_file, 'r') as f:
@@ -69,18 +75,22 @@ async def run_crawler(request: CrawlerRequest):
     if 'costco' in url:
         spider = CostcoSpider
         result_file = 'result_costco.json'
+        clean_json_file(result_file)
         spider_type = 'scrapy'
     elif 'elpalaciodehierro' in url:
         spider = PalacioSpyder
         result_file = 'result_palacio.json'
+        clean_json_file(result_file)
         spider_type = 'scrapy'
     elif 'liverpool' in url:
         spider = LiverPoolSeleniumSpider
         result_file = "result_liverpool.json"
+        clean_json_file(result_file)
         spider_type = 'selenium'
     elif 'mercadolibre' in url:
         spider = MercadoLibreSeleniumSpider
         result_file = "result_mercadolibre.json"
+        clean_json_file(result_file)
         spider_type = 'selenium'
     else:
         return {"message": "URL not supported"}
