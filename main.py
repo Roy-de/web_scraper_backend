@@ -93,7 +93,7 @@ async def run_crawler(request: CrawlerRequest):
         clean_json_file(result_file)
         spider_type = 'selenium'
     else:
-        return {"message": "URL not supported"}
+        return {"status": "URL not supported"}
 
     if url in processes:
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
