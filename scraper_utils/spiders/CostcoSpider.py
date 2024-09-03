@@ -47,25 +47,23 @@ class CostcoSpider(BaseSpider):
         item['price'] = price.strip() if price else 'N/A'
         self.result.price = item['price']
 
-        # match = re.search(r'costco.com.mx/[^/]+/([^/]+)/', response.url)
-        # category = match.group(1) if match else 'N/A'
-        # print(match.group(0))
-        # self.result.category = category
-
         # Extract inventory status
         inventory_status_list = response.css('.pdp-message::text').getall()
         item['inventory_status'] = ' '.join(
             [status.strip() for status in inventory_status_list]) if inventory_status_list else 'N/A'
 
         out_of_stock_button = response.css('button.outOfStock::text').get()
+        in_stock_button = response.css('button#add-to-cart-button::text').get()
         zip_code_button = response.css('button.bd-view-pricing::text').get()
         if out_of_stock_button:
             result = "Out of stock"
         else:
             if zip_code_button and 'Seleccionar Código Postal' in zip_code_button:
                 result = "In stock - Zip code required"
-            else:
+            elif in_stock_button:
                 result = "In stock"
+            else:
+                result = "Link broken"
 
         self.logger.info(f"Assigned price: {self.result.price}")
         # Save result to file
