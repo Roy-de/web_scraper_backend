@@ -31,6 +31,8 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
             # Check if the page is broken
             if self.is_link_broken():
                 self.result.status = "Link broken"
+                self.result.price = 0
+                self.result.category = "Link broken"
             else:
                 # Check if the product is in stock or available through external vendors
                 availability_status = self.check_if_in_stock()

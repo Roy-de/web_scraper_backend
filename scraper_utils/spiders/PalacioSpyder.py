@@ -26,6 +26,8 @@ class PalacioSpyder(BaseSpider):
         if response.status == 410:
             result = "Link broken"
             self.result.status = result
+            self.result.price = 0
+            self.result.category = result
             return
         price = response.css("div.b-product_price-sales.m-reduced span.b-product_price-value::text").get()
         self.result.price = price.strip()
