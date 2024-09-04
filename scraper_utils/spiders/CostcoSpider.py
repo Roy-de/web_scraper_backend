@@ -35,7 +35,20 @@ class CostcoSpider(BaseSpider):
                     'error_message'] = ('The link seems to be broken or content is not available. Only loading '
                                         'placeholders found.')
                 self.result.status = result
+                self.result.price = 0
+                self.result.category = result
+                self.save_result()
                 return
+
+        broken_link_text = response.css('h1.heading::text').get()
+        if broken_link_text and "La página solicitada no pudo ser encontrada" in broken_link_text:
+            result = 'Link broken'
+            item['error_message'] = 'The link is broken. Page not found.'
+            self.result.status = result
+            self.result.price = 0
+            self.result.category = result
+            self.save_result()
+            return
 
         breadcrumbs = response.css('ol.breadcrumb li a::text').getall()
 
