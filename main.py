@@ -12,6 +12,7 @@ from scrapy.utils.project import get_project_settings
 from starlette.middleware.cors import CORSMiddleware
 
 from scraper_utils import BaseSpider, BaseSelenium
+from scraper_utils.result import Result
 from scraper_utils.spiders.MercadoLibreSelenium import MercadoLibreSeleniumSpider
 from scraper_utils.spiders.LiverpoolSelenium import LiverPoolSeleniumSpider
 from scraper_utils.spiders.CostcoSpider import CostcoSpider
@@ -70,7 +71,7 @@ def read_result_file(result_file):
 @app.post("/run_crawler/")
 async def run_crawler(request: CrawlerRequest):
     url = request.url
-
+    result = Result()
     # Determine the spider type and result file based on URL
     if 'costco' in url:
         spider = CostcoSpider
@@ -93,7 +94,11 @@ async def run_crawler(request: CrawlerRequest):
         clean_json_file(result_file)
         spider_type = 'selenium'
     else:
-        return {"status": "URL not supported"}
+
+        result.status = "URL not supported"
+        result.price = 0
+        result.category = "URL not supported"
+        return {"message": result}
 
     if url in processes:
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
