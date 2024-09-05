@@ -64,14 +64,21 @@ class CostcoSeleniumSpider(BaseSelenium):
 
     def is_link_broken(self):
         try:
-            # Check if the broken link message appears
-            broken_link_text = self.driver.find_element(By.CSS_SELECTOR, 'h1.heading').text
-            if "La página solicitada no pudo ser encontrada" in broken_link_text:
+            # Try to locate the element that indicates the section is present
+            try:
+                # This should match the container class or a reliable identifying element for that section
+                section_element = self.driver.find_element(By.CSS_SELECTOR, "div.product-page-container")
+                if section_element:
+                    # Section was found, meaning the link is not broken
+                    return False
+            except NoSuchElementException:
+                # Section not found, potentially broken link
                 return True
         except (NoSuchElementException, TimeoutException):
-            return False
-        return False
+            # In case the element or page fails to load, return True indicating the link is broken
+            return True
 
+        return False  # Link is not broken if the section is found
     def extract_breadcrumbs(self):
         try:
             breadcrumbs = self.driver.find_elements(By.CSS_SELECTOR, 'ol.breadcrumb li a')
