@@ -83,7 +83,8 @@ class CostcoSeleniumSpider(BaseSelenium):
     def extract_original_price(self):
         try:
             original_price = self.driver.find_element(By.CSS_SELECTOR,
-                                                      'div.price-original span.price-value span.notranslate').text
+                                                      'span.notranslate.ng-star-inserted').text
+            print(original_price)
             return original_price.strip()
         except NoSuchElementException:
             return None
