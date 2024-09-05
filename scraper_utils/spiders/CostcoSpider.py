@@ -51,12 +51,22 @@ class CostcoSpider(BaseSpider):
             return
 
         breadcrumbs = response.css('ol.breadcrumb li a::text').getall()
-
+        print(breadcrumbs[1])
         if breadcrumbs:
             self.result.category = breadcrumbs[1]
 
         # Extract details
         price = response.css('span.notranslate.ng-star-inserted::text').get()
+        original_price = response.css('div.price-original span.price-value span.notranslate::text').get()
+
+        # Extracting discount value
+        discount_value = response.css('div.discount span.discount-value sip-format-price span.notranslate::text').get()
+
+        # Extracting price after discount
+        price_after_discount = response.css('div.price-after-discount div.you-pay-value span.you-pay-value::text').get()
+
+        print(
+            f"Original price: {original_price}, Discount value: {discount_value}, price_after_discount: {price_after_discount}")
         item['price'] = price.strip() if price else 'N/A'
         self.result.price = item['price']
 

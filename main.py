@@ -13,6 +13,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from scraper_utils import BaseSpider, BaseSelenium
 from scraper_utils.result import Result
+from scraper_utils.spiders.CostcoSeleniumSpider import CostcoSeleniumSpider
 from scraper_utils.spiders.MercadoLibreSelenium import MercadoLibreSeleniumSpider
 from scraper_utils.spiders.LiverpoolSelenium import LiverPoolSeleniumSpider
 from scraper_utils.spiders.CostcoSpider import CostcoSpider
@@ -74,10 +75,10 @@ async def run_crawler(request: CrawlerRequest):
     result = Result()
     # Determine the spider type and result file based on URL
     if 'costco' in url:
-        spider = CostcoSpider
+        spider = CostcoSeleniumSpider
         result_file = 'result_costco.json'
         clean_json_file(result_file)
-        spider_type = 'scrapy'
+        spider_type = 'selenium'
     elif 'elpalaciodehierro' in url:
         spider = PalacioSpyder
         result_file = 'result_palacio.json'
@@ -96,7 +97,7 @@ async def run_crawler(request: CrawlerRequest):
     else:
 
         result.status = "URL not supported"
-        result.price = 0
+        result.price = "0"
         result.category = "URL not supported"
         return {"message": result}
 

@@ -14,6 +14,7 @@ class BaseSelenium:
         # Initialize the WebDriver based on the browser type
         if browser == 'chrome':
             chrome_options = ChromeOptions()
+            chrome_options.page_load_strategy = 'eager'
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
@@ -24,6 +25,12 @@ class BaseSelenium:
                 "Chrome/114.0.5735.199 Safari/537.36")
             chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Prevent detection
             chrome_options.add_argument("--enable-javascript")  # Ensure JS is enabled
+            prefs = {
+                "profile.managed_default_content_settings.images": 2,  # Disable images
+                "profile.default_content_setting_values.notifications": 2,  # Disable notifications
+                "profile.managed_default_content_settings.stylesheets": 2  # Disable CSS
+            }
+            chrome_options.add_experimental_option("prefs", prefs)
 
             service = Service(ChromeDriverManager().install())
 
