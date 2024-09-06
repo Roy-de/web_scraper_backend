@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libxi6 \
     libgconf-2-4 \
+    cron \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,6 +25,14 @@ RUN CHROME_DRIVER_VERSION=$(wget -q -O - https://chromedriver.storage.googleapis
     && mv chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver
 
+# Copy the cleanup script
+COPY cleanup.sh /usr/local/bin/cleanup.sh
+RUN chmod +x /usr/local/bin/cleanup.sh
+
+# Copy the crontab file
+COPY crontab /etc/cron.d/cleanup-cron
+RUN chmod 0644 /etc/cron.d/cleanup-cron && crontab /etc/cron.d/cleanup-cron
+
 # Set the display port to avoid crashes
 ENV DISPLAY=:99
 
@@ -32,8 +41,6 @@ WORKDIR /app
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
-
-# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
@@ -42,5 +49,5 @@ COPY . .
 # Expose the port FastAPI will run on
 EXPOSE 8000
 
-# Command to run the FastAPI app using Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Start cron service and FastAPI app
+CMD ["sh", "-c", "cron && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
