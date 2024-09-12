@@ -1,0 +1,28 @@
+steps:
+# Step 1: Build the Docker image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/my-image:$SHORT_SHA', '.']
+  id: Build
+
+# Step 2: Push the Docker image to Google Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/my-image:$SHORT_SHA']
+  id: Push
+
+# Step 3: Deploy the Docker image to Google Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+    - 'run'
+    - 'deploy'
+    - 'my-service'  # Name of your Cloud Run service
+    - '--image'
+    - 'gcr.io/$PROJECT_ID/my-image:$SHORT_SHA'
+    - '--platform'
+    - 'managed'
+    - '--region'
+    - 'us-central1'  # Change to your desired region
+    - '--allow-unauthenticated'  # Remove if you want to restrict access
+  id: Deploy
+
+images:
+- 'gcr.io/$PROJECT_ID/my-image:$SHORT_SHA'

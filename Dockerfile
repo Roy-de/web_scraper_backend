@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y \
 
 # Install Google Chrome
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && apt-get update \
     && apt-get install -y ./google-chrome-stable_current_amd64.deb \
     && rm google-chrome-stable_current_amd64.deb
 
@@ -25,13 +24,12 @@ RUN CHROME_DRIVER_VERSION=$(wget -q -O - https://chromedriver.storage.googleapis
     && mv chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver
 
-# Copy the cleanup script
+# Copy the cleanup script and crontab file
 COPY cleanup.sh /usr/local/bin/cleanup.sh
-RUN chmod +x /usr/local/bin/cleanup.sh
-
-# Copy the crontab file
 COPY crontab /etc/cron.d/cleanup-cron
-RUN chmod 0644 /etc/cron.d/cleanup-cron && crontab /etc/cron.d/cleanup-cron
+
+# Set permissions for cron job and the cleanup script
+RUN chmod +x /usr/local/bin/cleanup.sh && chmod 0644 /etc/cron.d/cleanup-cron && crontab /etc/cron.d/cleanup-cron
 
 # Set the display port to avoid crashes
 ENV DISPLAY=:99
@@ -41,9 +39,11 @@ WORKDIR /app
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy the rest of the application code
 COPY . .
 
 # Expose the port FastAPI will run on
@@ -51,3 +51,4 @@ EXPOSE 8000
 
 # Start cron service and FastAPI app
 CMD ["sh", "-c", "cron && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
+
