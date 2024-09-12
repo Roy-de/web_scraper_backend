@@ -47,7 +47,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the port FastAPI will run on
-EXPOSE 8000
+EXPOSE 8001
 
 # Start cron service and FastAPI app
-CMD ["sh", "-c", "cron && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
+CMD ["sh", "-c", "cron && uvicorn main:app --host 0.0.0.0 --port 8001 --reload"]
