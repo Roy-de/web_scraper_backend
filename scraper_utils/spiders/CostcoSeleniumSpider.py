@@ -1,6 +1,6 @@
 import json
 
-from selenium.common import NoSuchElementException, TimeoutException
+from selenium.common import NoSuchElementException, TimeoutException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
 
 from scraper_utils.BaseSelenium import BaseSelenium
@@ -79,12 +79,13 @@ class CostcoSeleniumSpider(BaseSelenium):
             return True
 
         return False  # Link is not broken if the section is found
+
     def extract_breadcrumbs(self):
         try:
             breadcrumbs = self.driver.find_elements(By.CSS_SELECTOR, 'ol.breadcrumb li a')
             breadcrumb_texts = [breadcrumb.text.strip() for breadcrumb in breadcrumbs]
             return breadcrumb_texts
-        except NoSuchElementException:
+        except NoSuchElementException or StaleElementReferenceException:
             return []
 
     def extract_original_price(self):
