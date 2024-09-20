@@ -68,7 +68,9 @@ class CostcoSeleniumSpider(BaseSelenium):
             try:
                 # This should match the container class or a reliable identifying element for that section
                 section_element = self.driver.find_element(By.CSS_SELECTOR, "div.product-page-container")
-                if section_element:
+                link_working_div = self.driver.find_element(By.CSS_SELECTOR, 'div.product-price-container.col-xs-12'
+                                                                             '.col-sm-12')
+                if section_element or not link_working_div:
                     # Section was found, meaning the link is not broken
                     return False
             except NoSuchElementException:
@@ -108,15 +110,19 @@ class CostcoSeleniumSpider(BaseSelenium):
     def extract_price_after_discount(self):
         try:
             price_after_discount = self.driver.find_element(By.CSS_SELECTOR,
-                                                            'div.price-after-discount div.you-pay-value span.you-pay-value').text
-            return price_after_discount.strip()
+                                                            'div.price-after-discount')
+            you_pay_value = price_after_discount.find_element(By.CSS_SELECTOR, "div.you-pay-value")
+
+            span_value = you_pay_value.find_element(By.CSS_SELECTOR, "span.you-pay-value")
+            print(span_value.text.strip())
+            return span_value.text.strip()
         except NoSuchElementException:
             return None
 
     def extract_inventory_status(self):
         try:
             # Fetch all buttons on the page
-            buttons = self.driver.find_elements(By.CSS_SELECTOR, 'button[type="button"]')
+            buttons = self.driver.find_elements(By.CSS_SELECTOR, 'button[type="submit"]')
 
             # Iterate through each button and check the text content
             for button in buttons:
@@ -128,8 +134,6 @@ class CostcoSeleniumSpider(BaseSelenium):
                 # Check for "Agregar al Carrito" (In stock)
                 elif button_text == "Agregar al Carrito":
                     return "In stock"
-                elif button_text == "Establecer Código Postal":
-                    return "In stock - Zip code required"
         except NoSuchElementException:
             pass
 
