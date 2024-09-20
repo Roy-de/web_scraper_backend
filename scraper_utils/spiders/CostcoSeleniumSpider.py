@@ -115,22 +115,30 @@ class CostcoSeleniumSpider(BaseSelenium):
 
     def extract_inventory_status(self):
         try:
-            out_of_stock_button = self.driver.find_element(By.CSS_SELECTOR, 'button.outOfStock')
-            if out_of_stock_button:
-                return "Out of stock"
+            # Fetch all buttons on the page
+            buttons = self.driver.find_elements(By.CSS_SELECTOR, 'button[type="button"]')
+
+            # Iterate through each button and check the text content
+            for button in buttons:
+                button_text = button.text.strip()
+
+                # Check for "Agotado" (Out of stock)
+                if button_text == "Agotado":
+                    return "Out of stock"
+                # Check for "Agregar al Carrito" (In stock)
+                elif button_text == "Agregar al Carrito":
+                    return "In stock"
+                elif button_text == "Establecer Código Postal":
+                    return "In stock - Zip code required"
         except NoSuchElementException:
             pass
 
         try:
-            in_stock_button = self.driver.find_element(By.CSS_SELECTOR, 'button#add-to-cart-button')
-            if in_stock_button:
-                return "In stock"
-        except NoSuchElementException:
-            pass
-
-        try:
-            zip_code_button = self.driver.find_element(By.CSS_SELECTOR, 'button.bd-view-pricing')
-            if zip_code_button and 'Seleccionar Código Postal' in zip_code_button.text:
+            # zip_code_button = self.driver.find_elements(By.CSS_SELECTOR, 'button.bd-view-pricing')
+            # if zip_code_button and 'Seleccionar Código Postal' in zip_code_button.text:
+            #     return "In stock - Zip code required"
+            zip_code_form = self.driver.find_element(By.CSS_SELECTOR, 'form[novalidate] input[name="postalCode"]')
+            if zip_code_form:
                 return "In stock - Zip code required"
         except NoSuchElementException:
             pass

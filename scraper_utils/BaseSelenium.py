@@ -1,3 +1,6 @@
+import os
+import shutil
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -30,9 +33,9 @@ class BaseSelenium:
                 "profile.default_content_setting_values.notifications": 2,  # Disable notifications
                 "profile.managed_default_content_settings.stylesheets": 2  # Disable CSS
             }
-            chrome_options.add_experimental_option("prefs", prefs)
+            driver_path = self.get_chrome_driver_path()
 
-            service = Service(ChromeDriverManager().install())
+            service = Service(driver_path)
 
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         elif browser == 'firefox':
@@ -46,6 +49,31 @@ class BaseSelenium:
 
         self.driver.implicitly_wait(implicit_wait)
         self.result = None
+
+    @staticmethod
+    def get_chrome_driver_path():
+        """Get the path of the ChromeDriver, downloading it to the project if not present."""
+        # Specify the project-specific directory to store the driver
+        project_dir = os.path.dirname(os.path.abspath(__file__))  # Get the path of this script
+        driver_dir = os.path.join(project_dir, 'drivers')  # Create a 'drivers' folder in the project
+        os.makedirs(driver_dir, exist_ok=True)
+
+        # Check if chromedriver is already downloaded in the specified folder
+        custom_driver_path = os.path.join(driver_dir, 'chromedriver')
+
+        # Check if chromedriver already exists in the project directory
+        if os.path.exists(custom_driver_path):
+            print("ChromeDriver already exists in project directory.")
+            return custom_driver_path
+
+        # Download the ChromeDriver using ChromeDriverManager
+        print("Downloading ChromeDriver...")
+        downloaded_driver_path = ChromeDriverManager().install()
+
+        # Copy the downloaded driver to the custom directory
+        shutil.copy(downloaded_driver_path, custom_driver_path)
+
+        return custom_driver_path  # Return the path of the ChromeDriver in the project directory
 
     def navigate_to_page(self, url: str):
         """Navigate to the given URL."""
