@@ -122,19 +122,22 @@ class CostcoSeleniumSpider(BaseSelenium):
     def extract_inventory_status(self):
         try:
             # Fetch all buttons on the page
-            buttons = self.driver.find_elements(By.CSS_SELECTOR, 'button[type="submit"]')
+            buttons = self.driver.find_elements(By.CSS_SELECTOR, 'button[type="submit"], button[type="button"]')
 
             # Iterate through each button and check the text content
             for button in buttons:
                 button_text = button.text.strip()
+                button_classes = button.get_attribute('class')
+                is_disabled = button.get_attribute('disabled')
 
-                # Check for "Agotado" (Out of stock)
-                if button_text == "Agotado":
+                # Check for the text "Agotado" (Out of stock) or check if the button is disabled
+                if button_text == "Agotado" or ("disabled" in button_classes and is_disabled is not None):
                     return "Out of stock"
-                # Check for "Agregar al Carrito" (In stock)
+
+                # Check for the text "Agregar al Carrito" (In stock)
                 elif button_text == "Agregar al Carrito":
                     return "In stock"
-        except NoSuchElementException:
+        except StaleElementReferenceException:
             pass
 
         try:

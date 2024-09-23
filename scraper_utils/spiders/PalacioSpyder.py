@@ -36,11 +36,13 @@ class PalacioSpyder(BaseSpider):
         self.result.category = category.strip()
         # Check if the product main info div exists to determine if the link works
         product_info = response.css('div.l-pdp-b-content.b-product_main_info.m-pdpv2').get()
-        if product_info:
+        product_info2 = response.css('div.b-product_main_info').get()
+        if product_info or product_info2:
 
             # Check if the 'Add to Cart' button is disabled to determine stock status
             is_disabled = response.css("button.b-add_to_cart_v2-btn.m-disabled").get()
-            result = "Out of stock" if is_disabled else "In stock"
+            in_stock = response.css("button.b-add_to_cart-btn").get()
+            result = "Out of stock" if is_disabled else ("In stock" if in_stock else "Out of stock")
         else:
             result = "Link broken"
 
