@@ -137,20 +137,23 @@ class CostcoSeleniumSpider(BaseSelenium):
                 # Check for the text "Agregar al Carrito" (In stock)
                 elif button_text == "Agregar al Carrito":
                     return "In stock"
+                elif button_text == "Seleccionar Código Postal":
+                    return "In stock -Zip code required"
+                else:
+                    try:
+                        # zip_code_button = self.driver.find_elements(By.CSS_SELECTOR, 'button.bd-view-pricing')
+                        # if zip_code_button and 'Seleccionar Código Postal' in zip_code_button.text:
+                        #     return "In stock - Zip code required"
+                        zip_code_form = self.driver.find_element(By.CSS_SELECTOR,
+                                                                 'form[novalidate] input[name="postalCode"]')
+                        if zip_code_form:
+                            return "In stock - Zip code required"
+                    except NoSuchElementException:
+                        pass
+
+                    return "Link broken"
         except StaleElementReferenceException:
             pass
-
-        try:
-            # zip_code_button = self.driver.find_elements(By.CSS_SELECTOR, 'button.bd-view-pricing')
-            # if zip_code_button and 'Seleccionar Código Postal' in zip_code_button.text:
-            #     return "In stock - Zip code required"
-            zip_code_form = self.driver.find_element(By.CSS_SELECTOR, 'form[novalidate] input[name="postalCode"]')
-            if zip_code_form:
-                return "In stock - Zip code required"
-        except NoSuchElementException:
-            pass
-
-        return "Link broken"
 
     def save_result(self):
         with open(self.result_file, 'w') as f:
