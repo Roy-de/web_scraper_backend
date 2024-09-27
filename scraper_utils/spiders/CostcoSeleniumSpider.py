@@ -150,10 +150,10 @@ class CostcoSeleniumSpider(BaseSelenium):
                             return "In stock - Zip code required"
                     except NoSuchElementException:
                         pass
-
-                    return "Link broken"
         except StaleElementReferenceException:
             pass
+
+        return "Link broken"
 
     def save_result(self):
         with open(self.result_file, 'w') as f:
