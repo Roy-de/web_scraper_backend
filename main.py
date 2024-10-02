@@ -16,7 +16,6 @@ from scraper_utils.result import Result
 from scraper_utils.spiders.CostcoSeleniumSpider import CostcoSeleniumSpider
 from scraper_utils.spiders.MercadoLibreSelenium import MercadoLibreSeleniumSpider
 from scraper_utils.spiders.LiverpoolSelenium import LiverPoolSeleniumSpider
-from scraper_utils.spiders.CostcoSpider import CostcoSpider
 from scraper_utils.spiders.PalacioSpyder import PalacioSpyder
 
 app = FastAPI()

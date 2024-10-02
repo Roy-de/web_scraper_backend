@@ -46,6 +46,10 @@ class LiverPoolSeleniumSpider(BaseSelenium):
         except TimeoutException:
             print("Page did not load fully, the link might be broken or there was a loading issue.")
 
+        finally:
+            # Ensure browser closes and memory is cleaned up after the request is handled
+            self.close_browser()
+
     def is_link_broken(self):
         try:
             # Check for specific broken link div
@@ -134,3 +138,9 @@ class LiverPoolSeleniumSpider(BaseSelenium):
 
     def scroll_to_element(self, element):
         self.driver.execute_script("arguments[0].scrollIntoView();", element)
+
+    def close_browser(self):
+        """Close the browser and release memory resources."""
+        if self.driver:
+            self.driver.quit()
+            self.driver = None

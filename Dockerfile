@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libxi6 \
     libgconf-2-4 \
-    xvfb \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
@@ -34,7 +33,7 @@ RUN CHROME_DRIVER_VERSION=$(wget -q -O - https://chromedriver.storage.googleapis
     && mv chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver
 
-# Set the display port to avoid crashes
+# Set the display port to avoid crashes (optional: remove if not needed)
 ENV DISPLAY=:99
 
 # Set the working directory
@@ -50,5 +49,5 @@ COPY . .
 # Expose the port FastAPI will run on
 EXPOSE 8080
 
-# Command to start Xvfb and FastAPI using Uvicorn
-CMD ["bash", "-c", "Xvfb :99 -screen 0 1024x768x16 & uvicorn main:app --host 0.0.0.0 --port 8080 --reload"]
+# Command to start FastAPI using Uvicorn without Xvfb
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
