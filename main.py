@@ -69,6 +69,14 @@ def read_result_file(result_file):
         return {"No result found"}
 
 
+def stop_process(url):
+    if url in processes:
+        process = processes[url]
+        if isinstance(process, multiprocessing.Process):
+            process.terminate()
+        del processes[url]
+
+
 @app.post("/run_crawler/")
 async def run_crawler(request: CrawlerRequest):
     url = request.url
@@ -106,12 +114,19 @@ async def run_crawler(request: CrawlerRequest):
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
 
     try:
+        timeout_seconds = 300
         if spider_type == 'scrapy':
             # For Scrapy spiders, use ProcessPoolExecutor
             with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as pool:
                 result_future = pool.submit(run_scrapy_crawler_process, url, spider, result_file)
                 processes[url] = result_future
                 result = result_future.result()
+                try:
+                    result = result_future.result(timeout=timeout_seconds)
+                except TimeoutError:
+                    print("timed out")
+                    stop_process(url)
+                    raise HTTPException(status_code=504, detail="Crawler timed out")
         else:
             # For Selenium spiders, run directly in the main process (single-threaded)
             result = run_selenium_crawler_process(spider_class=spider, url=url, result_file=result_file)
