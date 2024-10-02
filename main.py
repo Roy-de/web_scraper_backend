@@ -99,6 +99,7 @@ async def run_crawler(request: CrawlerRequest):
         result.status = "URL not supported"
         result.price = "0"
         result.category = "URL not supported"
+        print("Completed")
         return {"message": result}
 
     if url in processes:
@@ -115,6 +116,7 @@ async def run_crawler(request: CrawlerRequest):
             # For Selenium spiders, run directly in the main process (single-threaded)
             result = run_selenium_crawler_process(spider_class=spider, url=url, result_file=result_file)
 
+        print("Completed")
         return {"message": result}
 
     except Exception as e:
