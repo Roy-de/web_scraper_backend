@@ -25,14 +25,6 @@ RUN CHROME_DRIVER_VERSION=$(wget -q -O - https://chromedriver.storage.googleapis
     && mv chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver
 
-# Copy the cleanup script
-COPY cleanup.sh /usr/local/bin/cleanup.sh
-RUN chmod +x /usr/local/bin/cleanup.sh
-
-# Copy the crontab file
-COPY crontab /etc/cron.d/cleanup-cron
-RUN chmod 0644 /etc/cron.d/cleanup-cron && crontab /etc/cron.d/cleanup-cron
-
 # Set the display port to avoid crashes
 ENV DISPLAY=:99
 
