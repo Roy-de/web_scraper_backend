@@ -113,6 +113,7 @@ async def run_crawler(request: CrawlerRequest):
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
 
     try:
+        print("SKU: " + request.sku + " URL: " + request.url)
         timeout_seconds = 300
         if spider_type == 'scrapy':
             # For Scrapy spiders, use ProcessPoolExecutor
