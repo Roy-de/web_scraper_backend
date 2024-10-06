@@ -22,7 +22,7 @@ class BaseSelenium:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--window-size=1920x1080")
+            #chrome_options.add_argument("--window-size=1920x1080")
             chrome_options.add_argument(
                 "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/114.0.5735.199 Safari/537.36")
