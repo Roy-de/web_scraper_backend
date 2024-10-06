@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
+from logging import Logger
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
@@ -124,7 +125,7 @@ async def run_crawler(request: CrawlerRequest):
                 try:
                     result = result_future.result(timeout=timeout_seconds)
                 except TimeoutError:
-                    print("timed out")
+                    Logger.info("timed out")
                     stop_process(url)
                     raise HTTPException(status_code=504, detail="Crawler timed out")
         else:

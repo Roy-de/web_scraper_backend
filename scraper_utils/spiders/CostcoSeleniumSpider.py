@@ -1,4 +1,5 @@
 import json
+import logging
 
 from selenium.common import NoSuchElementException, TimeoutException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
@@ -13,10 +14,10 @@ class CostcoSeleniumSpider(BaseSelenium):
     def __init__(self, url: str = 'https://www.costco.com.mx/', result_file: str = 'result_costco.json',
                  browser: str = 'chrome'):
         super().__init__(browser)
-        self.reuse_driver = False
         self.url = url
         self.result_file = result_file
         self.result = Result()
+        logging.getLogger('selenium').setLevel(logging.CRITICAL)
 
     def run(self):
         # Navigate to the URL
