@@ -18,13 +18,9 @@ class CostcoSeleniumSpider(BaseSelenium):
         self.result_file = result_file
         self.result = Result()
 
-    def run(self, reuse_driver=True):
+    def run(self):
         # Navigate to the URL
-        self.reuse_driver = reuse_driver
-        print("Reusing driver"+reuse_driver)
-        # Only navigate if not reusing driver or the URL has changed
-        if not self.reuse_driver or self.driver.current_url != self.url:
-            self.navigate_to_page(self.url)
+        self.navigate_to_page(self.url)
 
         try:
             # Wait until the page body is fully loaded
