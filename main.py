@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
+from logging import Logger
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
@@ -16,7 +17,6 @@ from scraper_utils.result import Result
 from scraper_utils.spiders.CostcoSeleniumSpider import CostcoSeleniumSpider
 from scraper_utils.spiders.MercadoLibreSelenium import MercadoLibreSeleniumSpider
 from scraper_utils.spiders.LiverpoolSelenium import LiverPoolSeleniumSpider
-from scraper_utils.spiders.CostcoSpider import CostcoSpider
 from scraper_utils.spiders.PalacioSpyder import PalacioSpyder
 
 app = FastAPI()
@@ -69,6 +69,14 @@ def read_result_file(result_file):
         return {"No result found"}
 
 
+def stop_process(url):
+    if url in processes:
+        process = processes[url]
+        if isinstance(process, multiprocessing.Process):
+            process.terminate()
+        del processes[url]
+
+
 @app.post("/run_crawler/")
 async def run_crawler(request: CrawlerRequest):
     url = request.url
@@ -99,22 +107,32 @@ async def run_crawler(request: CrawlerRequest):
         result.status = "URL not supported"
         result.price = "0"
         result.category = "URL not supported"
+        print("Completed")
         return {"message": result}
 
     if url in processes:
         raise HTTPException(status_code=400, detail="Crawler is already running for this URL")
 
     try:
+        print("SKU: " + request.sku + " URL: " + request.url)
+        timeout_seconds = 300
         if spider_type == 'scrapy':
             # For Scrapy spiders, use ProcessPoolExecutor
             with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as pool:
                 result_future = pool.submit(run_scrapy_crawler_process, url, spider, result_file)
                 processes[url] = result_future
                 result = result_future.result()
+                try:
+                    result = result_future.result(timeout=timeout_seconds)
+                except TimeoutError:
+                    Logger.info("timed out")
+                    stop_process(url)
+                    raise HTTPException(status_code=504, detail="Crawler timed out")
         else:
             # For Selenium spiders, run directly in the main process (single-threaded)
             result = run_selenium_crawler_process(spider_class=spider, url=url, result_file=result_file)
 
+        print("Completed")
         return {"message": result}
 
     except Exception as e:

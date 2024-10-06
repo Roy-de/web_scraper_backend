@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 
@@ -13,6 +14,8 @@ from selenium.webdriver.chrome.service import Service
 
 
 class BaseSelenium:
+    logging.getLogger('selenium').setLevel(logging.DEBUG)
+
     def __init__(self, browser: str = 'chrome', implicit_wait: int = 10):
         # Initialize the WebDriver based on the browser type
         if browser == 'chrome':
@@ -22,6 +25,7 @@ class BaseSelenium:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--log-level=4")
             chrome_options.add_argument("--window-size=1920x1080")
             chrome_options.add_argument(
                 "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -49,6 +53,8 @@ class BaseSelenium:
 
         self.driver.implicitly_wait(implicit_wait)
         self.result = None
+
+    logging.getLogger('selenium').setLevel(logging.CRITICAL)
 
     @staticmethod
     def get_chrome_driver_path():
