@@ -62,6 +62,7 @@ class CostcoSeleniumSpider(BaseSelenium):
         except TimeoutException:
             print("Page did not load fully, there might be a loading issue.")
 
+
     def is_link_broken(self):
         try:
             # Try to locate the element that indicates the section is present
