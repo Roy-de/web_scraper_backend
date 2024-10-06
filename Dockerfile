@@ -33,8 +33,6 @@ RUN CHROME_DRIVER_VERSION=$(wget -q -O - https://chromedriver.storage.googleapis
     && mv chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver
 
-# Set the display port to avoid crashes (optional: remove if not needed)
-ENV DISPLAY=:99
 
 # Set the working directory
 WORKDIR /app
