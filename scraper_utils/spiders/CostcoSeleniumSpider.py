@@ -1,8 +1,10 @@
 import json
+import time
 
 from selenium.common import NoSuchElementException, TimeoutException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
-
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from scraper_utils.BaseSelenium import BaseSelenium
 from scraper_utils.result import Result
 
@@ -116,40 +118,50 @@ class CostcoSeleniumSpider(BaseSelenium):
             return None
 
     def extract_inventory_status(self):
-        try:
-            # Fetch all buttons on the page
-            buttons = self.driver.find_elements(By.CSS_SELECTOR, 'button[type="submit"], button[type="button"]')
+        max_retries = 3  # Number of retry attempts
+        retry_count = 0  # Retry counter
 
-            # Iterate through each button and check the text content
-            for button in buttons:
-                button_text = button.text.strip()
-                button_classes = button.get_attribute('class')
-                is_disabled = button.get_attribute('disabled')
+        while retry_count < max_retries:
+            try:
+                # Wait for up to 10 seconds to load all buttons on the page
+                wait = WebDriverWait(self.driver, 10)
+                buttons = wait.until(EC.presence_of_all_elements_located(
+                    (By.CSS_SELECTOR, 'button[type="submit"], button[type="button"]')
+                ))
 
-                # Check for the text "Agotado" (Out of stock) or check if the button is disabled
-                if button_text == "Agotado" or ("disabled" in button_classes and is_disabled is not None):
-                    return "Out of stock"
+                # If buttons are found, proceed with the usual logic
+                if buttons:
+                    for button in buttons:
+                        button_text = button.text.strip()
+                        button_classes = button.get_attribute('class')
+                        is_disabled = button.get_attribute('disabled')
 
-                # Check for the text "Agregar al Carrito" (In stock)
-                elif button_text == "Agregar al Carrito":
-                    return "In stock"
-                elif button_text == "Seleccionar Código Postal":
-                    return "In stock -Zip code required"
-                else:
-                    try:
-                        # zip_code_button = self.driver.find_elements(By.CSS_SELECTOR, 'button.bd-view-pricing')
-                        # if zip_code_button and 'Seleccionar Código Postal' in zip_code_button.text:
-                        #     return "In stock - Zip code required"
-                        zip_code_form = self.driver.find_element(By.CSS_SELECTOR,
-                                                                 'form[novalidate] input[name="postalCode"]')
-                        if zip_code_form:
+                        # Check for the text "Agotado" (Out of stock) or if the button is disabled
+                        if button_text == "Agotado" or ("disabled" in button_classes and is_disabled is not None):
+                            return "Out of stock"
+
+                        # Check for the text "Agregar al Carrito" (In stock)
+                        elif button_text == "Agregar al Carrito":
+                            return "In stock"
+                        elif button_text == "Seleccionar Código Postal":
                             return "In stock - Zip code required"
-                    except NoSuchElementException:
-                        pass
+                        else:
+                            try:
+                                # Look for the zip code form input field
+                                zip_code_form = self.driver.find_element(By.CSS_SELECTOR,
+                                                                         'form[novalidate] input[name="postalCode"]')
+                                if zip_code_form:
+                                    return "In stock - Zip code required"
+                            except NoSuchElementException:
+                                pass
 
-                    return "Link broken"
-        except StaleElementReferenceException:
-            pass
+            except (StaleElementReferenceException, NoSuchElementException):
+                # Retry fetching the buttons in case of stale element or no elements found
+                retry_count += 1
+                time.sleep(2)  # Small delay before retrying to allow the page to load
+
+        # After exhausting retries, return "Link broken"
+        return "Link broken"
 
     def save_result(self):
         with open(self.result_file, 'w') as f:
