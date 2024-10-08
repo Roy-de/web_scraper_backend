@@ -139,8 +139,3 @@ class LiverPoolSeleniumSpider(BaseSelenium):
     def scroll_to_element(self, element):
         self.driver.execute_script("arguments[0].scrollIntoView();", element)
 
-    def close_browser(self):
-        """Close the browser and release memory resources."""
-        if self.driver:
-            self.driver.quit()
-            self.driver = None
