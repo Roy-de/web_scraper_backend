@@ -44,9 +44,6 @@ class MercadoLibreSeleniumSpider(BaseSelenium):
             self.save_result(self.result)
         except TimeoutException:
             print("Page did not load fully, the link might be broken or there was a loading issue")
-        finally:
-            # Ensure browser closes and memory is cleaned up after the request is handled
-            self.close_browser()
 
     def is_link_broken(self):
         try:
