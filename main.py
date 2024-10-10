@@ -118,7 +118,7 @@ async def run_crawler(request: CrawlerRequest):
         timeout_seconds = 300
         if spider_type == 'scrapy':
             # For Scrapy spiders, use ProcessPoolExecutor
-            with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as pool:
+            with ProcessPoolExecutor(max_workers=min(multiprocessing.cpu_count(), 4)) as pool:
                 result_future = pool.submit(run_scrapy_crawler_process, url, spider, result_file)
                 processes[url] = result_future
                 result = result_future.result()
@@ -139,6 +139,7 @@ async def run_crawler(request: CrawlerRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
+        stop_process(url)
         # Clean up process entry if the process is completed or failed
         if url in processes:
             del processes[url]
