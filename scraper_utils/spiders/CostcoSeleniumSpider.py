@@ -4,7 +4,7 @@ import time
 from selenium.common import NoSuchElementException, TimeoutException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import selenium.webdriver.support.expected_conditions as EC
 from scraper_utils.BaseSelenium import BaseSelenium
 from scraper_utils.result import Result
 
@@ -15,13 +15,18 @@ class CostcoSeleniumSpider(BaseSelenium):
     def __init__(self, url: str = 'https://www.costco.com.mx/', result_file: str = 'result_costco.json',
                  browser: str = 'chrome'):
         super().__init__(browser)
+        self.reuse_driver = False
         self.url = url
         self.result_file = result_file
         self.result = Result()
 
     def run(self, reuse_driver=True):
         # Navigate to the URL
-        self.navigate_to_page(self.url)
+        self.reuse_driver = reuse_driver
+
+        # Only navigate if not reusing driver or the URL has changed
+        if not self.reuse_driver or self.driver.current_url != self.url:
+            self.navigate_to_page(self.url)
 
         try:
             # Wait until the page body is fully loaded
@@ -58,6 +63,7 @@ class CostcoSeleniumSpider(BaseSelenium):
 
         except TimeoutException:
             print("Page did not load fully, there might be a loading issue.")
+
 
     def is_link_broken(self):
         try:
