@@ -1,3 +1,4 @@
+import gc
 import json
 import multiprocessing
 import os
@@ -130,7 +131,12 @@ async def run_crawler(request: CrawlerRequest):
                     raise HTTPException(status_code=504, detail="Crawler timed out")
         else:
             # For Selenium spiders, run directly in the main process (single-threaded)
-            result = run_selenium_crawler_process(spider_class=spider, url=url, result_file=result_file)
+            try:
+                result = run_selenium_crawler_process(spider_class=spider, url=url, result_file=result_file)
+            except TimeoutError as e:
+                Logger.info("timed out")
+                stop_process(url)
+                raise HTTPException(status_code=504, detail="Crawler timed out")
 
         print("Completed")
         return {"message": result}
@@ -143,3 +149,4 @@ async def run_crawler(request: CrawlerRequest):
         # Clean up process entry if the process is completed or failed
         if url in processes:
             del processes[url]
+        gc.collect()

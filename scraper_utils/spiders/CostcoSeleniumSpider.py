@@ -58,7 +58,8 @@ class CostcoSeleniumSpider(BaseSelenium):
 
         except TimeoutException:
             print("Page did not load fully, there might be a loading issue.")
-
+        finally:
+            self.close_browser()
 
     def is_link_broken(self):
         try:

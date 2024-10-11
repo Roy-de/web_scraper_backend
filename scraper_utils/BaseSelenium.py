@@ -1,3 +1,4 @@
+import gc
 import logging
 import os
 import shutil
@@ -14,7 +15,7 @@ from selenium.webdriver.chrome.service import Service
 
 
 class BaseSelenium:
-    logging.getLogger('selenium').setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.CRITICAL)
 
     def __init__(self, browser: str = 'chrome', implicit_wait: int = 10):
         # Initialize the WebDriver based on the browser type
@@ -42,19 +43,11 @@ class BaseSelenium:
             service = Service(driver_path)
 
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
-        elif browser == 'firefox':
-            firefox_options = FirefoxOptions()
-            firefox_options.add_argument("--disable-dev-shm-usage")
-            firefox_options.add_argument("--headless")  # Example option, run in headless mode
-            firefox_options.add_argument("--no-sandbox")
-            self.driver = webdriver.Firefox(options=firefox_options)
         else:
             raise ValueError(f"Browser {browser} is not supported.")
 
         self.driver.implicitly_wait(implicit_wait)
         self.result = None
-
-    logging.getLogger('selenium').setLevel(logging.CRITICAL)
 
     @staticmethod
     def get_chrome_driver_path():
@@ -119,7 +112,9 @@ class BaseSelenium:
 
     def close_browser(self):
         """Close the browser."""
-        self.driver.quit()
+        if self.driver:
+            self.driver.quit()
+            gc.collect()
 
     def take_screenshot(self, file_name: str):
         """Take a screenshot of the current page."""
