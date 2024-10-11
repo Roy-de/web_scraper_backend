@@ -133,7 +133,7 @@ async def run_crawler(request: CrawlerRequest):
             # For Selenium spiders, run directly in the main process (single-threaded)
             try:
                 result = run_selenium_crawler_process(spider_class=spider, url=url, result_file=result_file)
-            except TimeoutError as e:
+            except TimeoutError:
                 Logger.info("timed out")
                 stop_process(url)
                 raise HTTPException(status_code=504, detail="Crawler timed out")

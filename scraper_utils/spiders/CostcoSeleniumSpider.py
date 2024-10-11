@@ -1,6 +1,6 @@
 import json
 import time
-
+import threading
 from selenium.common import NoSuchElementException, TimeoutException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -18,8 +18,35 @@ class CostcoSeleniumSpider(BaseSelenium):
         self.url = url
         self.result_file = result_file
         self.result = Result()
+        self.timeout = 300 # Timeout in seconds
+        self.crawling_thread = None  # Thread reference
+        self.timeout_event = threading.Event()  # Event to signal completion
 
     def run(self):
+        try:
+            # Start the timeout checker
+            self.timeout_event.clear()
+            self.crawling_thread = threading.Thread(target=self.crawl)
+            self.crawling_thread.start()
+
+            # Wait for the crawling to complete or timeout
+            self.crawling_thread.join(timeout=self.timeout)
+
+            # Check if the crawling finished in time
+            if self.crawling_thread.is_alive():
+                print("Crawling timed out.")
+                self.take_screenshot('crawling_timeout.png')  # Capture a screenshot for debugging
+                self.timeout_event.set()  # Signal the timeout event
+            else:
+                self.timeout_event.set()  # Signal that crawling finished on time
+
+        except Exception as e:
+            print("Error during crawling: ", str(e))
+            self.take_screenshot("timeout_error.png")
+        finally:
+            self.close_browser()
+
+    def crawl(self):
         try:
             # Navigate to the URL
             self.navigate_to_page(self.url)
