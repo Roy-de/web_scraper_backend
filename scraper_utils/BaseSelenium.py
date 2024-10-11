@@ -92,6 +92,7 @@ class BaseSelenium:
             element = WebDriverWait(self.driver, timeout).until(
                 EC.presence_of_element_located((by, value))
             )
+            print("Body tag found")
             return element
         except TimeoutException:
             print(f"Timed out waiting for element: {value}")

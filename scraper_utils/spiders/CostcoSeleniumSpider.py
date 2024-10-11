@@ -25,7 +25,13 @@ class CostcoSeleniumSpider(BaseSelenium):
             self.navigate_to_page(self.url)
 
             # Wait until the page body is fully loaded
-            self.wait_for_element(By.TAG_NAME, 'body', timeout=20)
+            body_element = self.wait_for_element(By.TAG_NAME, 'body', timeout=10)
+            if body_element is None:
+                print("Failed to load the body. Exiting.")
+                self.take_screenshot('body_not_loaded.png')  # Optional: Capture a screenshot to investigate
+                return
+
+            print("Body tag loaded successfully.")
 
             # Check if the page is broken
             if self.is_link_broken():
@@ -42,13 +48,17 @@ class CostcoSeleniumSpider(BaseSelenium):
 
             # Extract product prices and details
             original_price = self.extract_original_price()
+            print("Original price: "+original_price)
             discount_value = self.extract_discount_value()
-            price_after_discount = self.extract_price_after_discount()
 
-            print(
-                f"Original price: {original_price}, Discount value: {discount_value}, Price after discount: {price_after_discount}")
+            if discount_value is not None:
+                print(f"Discount value: {discount_value}")
+                price_after_discount = self.extract_price_after_discount()
+                self.result.price = price_after_discount
 
-            self.result.price = price_after_discount or original_price
+            else:
+                print("No discount available, skipping.")
+                self.result.price = original_price
 
             # Check inventory status
             inventory_status = self.extract_inventory_status()
@@ -56,15 +66,16 @@ class CostcoSeleniumSpider(BaseSelenium):
 
             self.save_result()
 
-        except TimeoutException:
-            print("Page did not load fully, there might be a loading issue.")
+        except Exception as e:
+            print("Page did not load fully, there might be a loading issue. " + str(e))
+            self.take_screenshot("timeout_error.png")
         finally:
             self.close_browser()
 
     def is_link_broken(self):
         try:
             # This should match the container class or a reliable identifying element for that section
-            wait = WebDriverWait(self.driver, 5)  # Increased timeout
+            wait = WebDriverWait(self.driver, 10)  # Increased timeout
             section_element = wait.until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.product-page-container")))
             link_working_div = self.driver.find_element(By.CSS_SELECTOR,
@@ -78,7 +89,7 @@ class CostcoSeleniumSpider(BaseSelenium):
 
     def extract_breadcrumbs(self):
         try:
-            wait = WebDriverWait(self.driver, 5)
+            wait = WebDriverWait(self.driver, 10)
             breadcrumbs = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'ol.breadcrumb li a')))
             return [breadcrumb.text.strip() for breadcrumb in breadcrumbs]
         except (NoSuchElementException, StaleElementReferenceException):
@@ -96,13 +107,17 @@ class CostcoSeleniumSpider(BaseSelenium):
     def extract_discount_value(self):
         try:
             wait = WebDriverWait(self.driver, 10)
+            # Try to find the discount element
             discount_value = wait.until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'div.discount span.discount-value sip-format-price span.notranslate')))
             return discount_value.text.strip()
-        except NoSuchElementException:
+        except (NoSuchElementException, TimeoutException):
+            # If no discount is found, return None or a default value
+            print("No discount found, skipping.")
             return None
 
     def extract_price_after_discount(self):
+
         try:
             wait = WebDriverWait(self.driver, 10)
             price_after_discount = wait.until(
