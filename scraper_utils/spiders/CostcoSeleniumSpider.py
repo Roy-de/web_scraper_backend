@@ -20,46 +20,55 @@ class CostcoSeleniumSpider(BaseSelenium):
         self.result = Result()
 
     def run(self):
-        # Navigate to the URL
-        self.navigate_to_page(self.url)
+        max_retries = 3
+        retry_count = 0
 
-        try:
-            # Wait until the page body is fully loaded
-            self.wait_for_element(By.TAG_NAME, 'body', timeout=20)
+        while retry_count < max_retries:
+            try:
+                # Navigate to the URL
+                self.navigate_to_page(self.url)
 
-            # Check if the page is broken
-            if self.is_link_broken():
-                self.result.status = 'Link broken'
-                self.result.price = 0
-                self.result.category = 'Link broken'
+                # Wait until the page body is fully loaded
+                self.wait_for_element(By.TAG_NAME, 'body', timeout=20)
+
+                # Check if the page is broken
+                if self.is_link_broken():
+                    self.result.status = 'Link broken'
+                    self.result.price = 0
+                    self.result.category = 'Link broken'
+                    self.save_result()
+                    return
+
+                # Extract breadcrumbs (category)
+                breadcrumbs = self.extract_breadcrumbs()
+                if breadcrumbs:
+                    self.result.category = breadcrumbs[1]  # Adjust to get the correct category
+
+                # Extract product prices and details
+                original_price = self.extract_original_price()
+                discount_value = self.extract_discount_value()
+                price_after_discount = self.extract_price_after_discount()
+
+                print(
+                    f"Original price: {original_price}, Discount value: {discount_value}, Price after discount: {price_after_discount}")
+
+                self.result.price = price_after_discount or original_price
+
+                # Check inventory status
+                inventory_status = self.extract_inventory_status()
+                self.result.status = inventory_status
+
                 self.save_result()
-                return
+                break  # Exit the retry loop if successful
 
-            # Extract breadcrumbs (category)
-            breadcrumbs = self.extract_breadcrumbs()
-            if breadcrumbs:
-                self.result.category = breadcrumbs[1]  # Adjust to get the correct category
-
-            # Extract product prices and details
-            original_price = self.extract_original_price()
-            discount_value = self.extract_discount_value()
-            price_after_discount = self.extract_price_after_discount()
-
-            print(
-                f"Original price: {original_price}, Discount value: {discount_value}, Price after discount: {price_after_discount}")
-
-            self.result.price = price_after_discount or original_price
-
-            # Check inventory status
-            inventory_status = self.extract_inventory_status()
-            self.result.status = inventory_status
-
-            self.save_result()
-
-        except TimeoutException:
-            print("Page did not load fully, there might be a loading issue.")
-        finally:
-            self.close_browser()
+            except TimeoutException:
+                print("Page did not load fully, there might be a loading issue.")
+                retry_count += 1
+                if retry_count >= max_retries:
+                    print("Max retries reached, exiting.")
+                    break
+            finally:
+                self.close_browser()
 
     def is_link_broken(self):
         try:
