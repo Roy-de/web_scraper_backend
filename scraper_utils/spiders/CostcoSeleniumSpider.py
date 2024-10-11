@@ -25,7 +25,7 @@ class CostcoSeleniumSpider(BaseSelenium):
 
         try:
             # Wait until the page body is fully loaded
-            self.wait_for_element(By.TAG_NAME, 'body', timeout=5)
+            self.wait_for_element(By.TAG_NAME, 'body', timeout=20)
 
             # Check if the page is broken
             if self.is_link_broken():
