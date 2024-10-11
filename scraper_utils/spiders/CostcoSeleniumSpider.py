@@ -63,58 +63,52 @@ class CostcoSeleniumSpider(BaseSelenium):
 
     def is_link_broken(self):
         try:
-            # Try to locate the element that indicates the section is present
-            try:
-                # This should match the container class or a reliable identifying element for that section
-                section_element = self.driver.find_element(By.CSS_SELECTOR, "div.product-page-container")
-                link_working_div = self.driver.find_element(By.CSS_SELECTOR, 'div.product-price-container.col-xs-12'
-                                                                             '.col-sm-12')
-                if section_element or not link_working_div:
-                    # Section was found, meaning the link is not broken
-                    return False
-            except NoSuchElementException:
-                # Section not found, potentially broken link
-                return True
+            # This should match the container class or a reliable identifying element for that section
+            wait = WebDriverWait(self.driver, 5)  # Increased timeout
+            section_element = wait.until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div.product-page-container")))
+            link_working_div = self.driver.find_element(By.CSS_SELECTOR,
+                                                        'div.product-price-container.col-xs-12.col-sm-12')
+            if section_element or not link_working_div:
+                # Section was found, meaning the link is not broken
+                return False
         except (NoSuchElementException, TimeoutException):
             # In case the element or page fails to load, return True indicating the link is broken
             return True
 
-        return False  # Link is not broken if the section is found
-
     def extract_breadcrumbs(self):
         try:
-            breadcrumbs = self.driver.find_elements(By.CSS_SELECTOR, 'ol.breadcrumb li a')
-            breadcrumb_texts = [breadcrumb.text.strip() for breadcrumb in breadcrumbs]
-            return breadcrumb_texts
-        except NoSuchElementException or StaleElementReferenceException:
+            wait = WebDriverWait(self.driver, 5)
+            breadcrumbs = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'ol.breadcrumb li a')))
+            return [breadcrumb.text.strip() for breadcrumb in breadcrumbs]
+        except (NoSuchElementException, StaleElementReferenceException):
             return []
 
     def extract_original_price(self):
         try:
-            original_price = self.driver.find_element(By.CSS_SELECTOR,
-                                                      'span.notranslate.ng-star-inserted').text
-            print(original_price)
-            return original_price.strip()
+            wait = WebDriverWait(self.driver, 10)
+            original_price = wait.until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'span.notranslate.ng-star-inserted')))
+            return original_price.text.strip()
         except NoSuchElementException:
             return None
 
     def extract_discount_value(self):
         try:
-            discount_value = self.driver.find_element(By.CSS_SELECTOR,
-                                                      'div.discount span.discount-value sip-format-price span.notranslate').text
-            return discount_value.strip()
+            wait = WebDriverWait(self.driver, 10)
+            discount_value = wait.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'div.discount span.discount-value sip-format-price span.notranslate')))
+            return discount_value.text.strip()
         except NoSuchElementException:
             return None
 
     def extract_price_after_discount(self):
         try:
-            price_after_discount = self.driver.find_element(By.CSS_SELECTOR,
-                                                            'div.price-after-discount')
-            you_pay_value = price_after_discount.find_element(By.CSS_SELECTOR, "div.you-pay-value")
-
-            span_value = you_pay_value.find_element(By.CSS_SELECTOR, "span.you-pay-value")
-            print(span_value.text.strip())
-            return span_value.text.strip()
+            wait = WebDriverWait(self.driver, 10)
+            price_after_discount = wait.until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'div.price-after-discount')))
+            you_pay_value = price_after_discount.find_element(By.CSS_SELECTOR, "div.you-pay-value span.you-pay-value")
+            return you_pay_value.text.strip()
         except NoSuchElementException:
             return None
 
