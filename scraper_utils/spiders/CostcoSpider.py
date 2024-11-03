@@ -83,7 +83,7 @@ class CostcoSpider(BaseSpider):
         else:
             if zip_code_button and 'Seleccionar Código Postal' in zip_code_button:
                 result = "In stock - Zip code required"
-            elif in_stock_button:
+            elif "Agregar al Carrito" in in_stock_button:
                 result = "In stock"
             else:
                 result = "Link broken"
