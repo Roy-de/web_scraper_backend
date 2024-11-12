@@ -75,15 +75,25 @@ class CostcoSpider(BaseSpider):
         item['inventory_status'] = ' '.join(
             [status.strip() for status in inventory_status_list]) if inventory_status_list else 'N/A'
 
+        # Fetch button texts from the response
         out_of_stock_button = response.css('button.outOfStock::text').get()
         in_stock_button = response.css('button#add-to-cart-button::text').get()
         zip_code_button = response.css('button.bd-view-pricing::text').get()
-        if out_of_stock_button:
+
+        # Print the actual texts for debugging purposes
+        print(f"Out of Stock Button Text: {out_of_stock_button}")
+        print(f"In Stock Button Text: {in_stock_button}")
+        print(f"Zip Code Button Text: {zip_code_button}")
+
+        # Handle NoneType values by providing default empty strings if None
+        if out_of_stock_button is None or "Agregar al Carrito" not in out_of_stock_button:
             result = "Out of stock"
         else:
             if zip_code_button and 'Seleccionar Código Postal' in zip_code_button:
                 result = "In stock - Zip code required"
-            elif "Agregar al Carrito" in in_stock_button:
+            elif in_stock_button and "Agregar al Carrito" in in_stock_button:
+                result = "In stock"
+            elif "Agregar al Carrito" in out_of_stock_button:
                 result = "In stock"
             else:
                 result = "Link broken"
