@@ -23,7 +23,7 @@ class LiverPoolSeleniumSpider(BaseSelenium):
 
         try:
             # Wait until the page is fully loaded by checking for a critical element
-            self.wait_for_element(By.TAG_NAME, 'body', timeout=2)
+            self.wait_for_element(By.TAG_NAME, 'body', timeout=10)
 
             # Check if the page is broken
             if self.is_link_broken():
@@ -49,7 +49,7 @@ class LiverPoolSeleniumSpider(BaseSelenium):
     def is_link_broken(self):
         try:
             # Check for specific broken link div
-            broken_link_element = WebDriverWait(self.driver, 2).until(
+            broken_link_element = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CLASS_NAME, 'o-content__noResultsNullSearch'))
             )
             if broken_link_element.is_displayed():
@@ -67,7 +67,7 @@ class LiverPoolSeleniumSpider(BaseSelenium):
     def check_if_in_stock(self):
         try:
             # Explicitly wait for the "Comprar ahora" button to appear
-            buy_now_button = WebDriverWait(self.driver, 2).until(
+            buy_now_button = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.ID, 'opc_pdp_buyNowButton'))
             )
             if buy_now_button.is_displayed():
@@ -84,13 +84,13 @@ class LiverPoolSeleniumSpider(BaseSelenium):
             self.driver.execute_script("window.scrollTo(0, 0);")
 
             # Locate the breadcrumb list
-            breadcrumb_container = WebDriverWait(self.driver, 6).until(
+            breadcrumb_container = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.m-breadcrumb"))
             )
 
             self.scroll_to_element(breadcrumb_container)
 
-            breadcrumb_elements = WebDriverWait(self.driver, 6).until(
+            breadcrumb_elements = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul.m-breadcrumb-list li"))
             )
 
@@ -118,7 +118,7 @@ class LiverPoolSeleniumSpider(BaseSelenium):
 
     def extract_prices(self):
         try:
-            price = WebDriverWait(self.driver, 2).until(
+            price = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "p.a-product__paragraphDiscountPrice.m-0.d-inline"))
             )
             parts = price.text.strip().split('\n')
