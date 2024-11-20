@@ -86,12 +86,12 @@ class CostcoSpider(BaseSpider):
         print(f"Zip Code Button Text: {zip_code_button}")
 
         # Handle NoneType values by providing default empty strings if None
-        if out_of_stock_button is None or "Agregar al Carrito" not in out_of_stock_button:
+        if out_of_stock_button is "Agotado" or "Agregar al Carrito" not in out_of_stock_button:
             result = "Out of stock"
         else:
             if zip_code_button and 'Seleccionar Código Postal' in zip_code_button:
                 result = "In stock - Zip code required"
-            elif in_stock_button and "Agregar al Carrito" in in_stock_button:
+            elif in_stock_button is "Agregar al Carrito" or out_of_stock_button is "Agregar al Carrito":
                 result = "In stock"
             elif "Agregar al Carrito" in out_of_stock_button:
                 result = "In stock"
